@@ -5,6 +5,8 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <algorithm>
+#include <set>
 
 using namespace std;
 
@@ -20,6 +22,12 @@ class Gramatica {
     */
 
 public:
+
+    string trim(const string& str) {
+        size_t first = str.find_first_not_of(' ');
+        size_t last = str.find_last_not_of(' ');
+        return str.substr(first, (last - first + 1));
+    }
     // Hash map para armazenar a gramática
     map<string, vector<string>> regras;
 
@@ -43,10 +51,12 @@ public:
 
             getline(ss, esquerda, '-'); // Obtém a parte esquerda (não-terminal)
             ss.ignore(2); // Ignora "->"
+            esquerda.erase(remove_if(esquerda.begin(), esquerda.end(), ::isspace), esquerda.end());
 
             // Dividir as produções à direita pelo delimitador '|'
             while (getline(ss, direita, '|')) {
                 // Adicionar a produção à lista de regras
+                direita = trim(direita);
                 regras[esquerda].push_back(direita);
             }
         }
@@ -74,6 +84,57 @@ public:
             cout << producao << endl;
         }
     }
+
+    bool isInPrev(const string &w, const set<string> &prev) {
+        for (char c : w) {
+            string s(1, c); 
+            if (prev.find(s) == prev.end()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    void findNullable() {
+        
+        cout << "Achar anuvelais" << endl;
+        set<string> anulaveis;
+
+        for (const auto &producoes : regras) {
+            for (const string &rule : producoes.second) {
+                if (rule == ".") {
+                    anulaveis.insert(producoes.first);
+                }
+            }
+        }
+
+        bool changed;
+        do {
+            set<string> prev = anulaveis;
+            changed = false;
+
+            for (const auto &producoes : regras) {
+                string A = producoes.first;
+                for (const string &rule : producoes.second) {
+                    if (isInPrev(rule, prev)) {
+                        if (anulaveis.find(A) == anulaveis.end()) {
+                            anulaveis.insert(A);
+                            changed = true;
+                        }
+                    }
+                }
+            }
+
+        } while (changed);
+
+
+        for( auto& regra : anulaveis){
+            cout << regra;
+        }
+
+        return;
+    }
 };
 
 int main(int argc, const char** argv) {
@@ -91,8 +152,9 @@ int main(int argc, const char** argv) {
     //gramatica.mostrarRegras();
 
     gramatica.mostrarRegras();
+    gramatica.findNullable();
 
-    gramatica.removeRecursao();
+    //gramatica.removeRecursao();
     
 
 
