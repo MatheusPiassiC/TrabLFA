@@ -20,6 +20,8 @@ class Gramatica {
     D −> .
 
     */
+private: 
+    map<string, vector<string>> regras;
 
 public:
 
@@ -29,7 +31,6 @@ public:
         return str.substr(first, (last - first + 1));
     }
     // Hash map para armazenar a gramática
-    map<string, vector<string>> regras;
 
     Gramatica(const string& nomeArquivo) {
         lerGramatica(nomeArquivo);
