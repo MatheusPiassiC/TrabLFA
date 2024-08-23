@@ -96,7 +96,7 @@ public:
     }
 
 
-    void findNullable() {
+    void acharAnulaveis() {
         
         cout << "Achar anuvelais" << endl;
         set<string> anulaveis;
@@ -130,7 +130,11 @@ public:
 
 
         for( auto& regra : anulaveis){
-            cout << regra;
+            cout << regra << " ";
+        }
+
+        for (auto& regra : anulaveis){
+            
         }
 
         return;
@@ -152,7 +156,7 @@ int main(int argc, const char** argv) {
     //gramatica.mostrarRegras();
 
     gramatica.mostrarRegras();
-    gramatica.findNullable();
+    gramatica.acharAnulaveis();
 
     //gramatica.removeRecursao();
     
