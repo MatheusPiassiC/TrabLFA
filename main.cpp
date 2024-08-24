@@ -40,6 +40,20 @@ public:
         return str.substr(first, (last - first + 1));
     }
 
+    void removerRecursividadeInicial(){
+        bool recursao = false;
+        for (auto& producao : regras["S"]) {
+            for (char letra: producao){
+                if (letra == 'S'){
+                    recursao = true;
+                }
+            }
+        }
+        if(recursao == true){
+            regras["S'"].push_back("S");
+        }
+    }
+
         void lerGramatica(const string& nomeArquivo) {
             ifstream arquivo(nomeArquivo);
             if (!arquivo.is_open()) {
