@@ -7,6 +7,7 @@
 #include <string>
 #include <algorithm>
 #include <set>
+#include <cctype> 
 
 using namespace std;
 
@@ -19,10 +20,11 @@ public:
         lerGramatica(nomeArquivo);
         removerRecursividadeInicial();
         eliminarRegrasLambda(); // Assumimos que a eliminação de regras lambda já foi realizada.
-        // buildClosures();
-        // removeChainRules();
-        // removerSimbolosInuteis();
-        // removerVariaveisInalcancaveis();
+        buildClosures();\
+        removeChainRules();
+        removerSimbolosInuteis();
+        removerVariaveisInalcancaveis();
+        transformarParaFNC();
     }
 
     string trim(const string& str) {
@@ -36,7 +38,6 @@ public:
         for (auto& producao : regras["S"]) {
             for (char letra: producao){
                 if (letra == 'S'){
-                    cout << letra << endl;
                     recursao = true;
                 }
             }
@@ -331,6 +332,77 @@ public:
             } else {
                 ++it;
             }
+        }
+    }
+
+    void transformarParaFNC() {
+        map<string, string> novosTerminais;
+
+        map<string, map<string,string>> novasRegras;
+        
+        // Parte 1: Substituir símbolos de regras cujo tamanho seja maior que 1 por não terminais
+        for (auto& producoes : regras) {
+            for (string& regra : producoes.second) {
+                if (regra.size() > 1) {
+                    string novaRegra;
+                    for (char& simbolo : regra) { // CAC  // c / C
+                        string s(1, simbolo);
+                        if (islower(simbolo)) {
+                            if (novosTerminais.find(s) == novosTerminais.end()) {
+                                string novoSimbolo = string(1, toupper(simbolo)) + "'";
+                                novosTerminais[s] = novoSimbolo;
+                            }
+                            // INSIRA O COMANDO AQUI
+                            novaRegra += novosTerminais[s]; // Substitui o terminal pelo novo não-terminal
+                        }
+                        else {
+                            novaRegra += simbolo;
+                        }
+                    }
+                    novasRegras[producoes.first][regra] = novaRegra;
+                    // for (const auto& outerPair : novasRegras) {
+                    //     cout << "Categoria: " << outerPair.first << endl;
+                    //         for (const auto& innerPair : outerPair.second) {
+                    //             cout << "  Regra: " << innerPair.first << " -> Valor: " << innerPair.second << endl;
+                    //         }
+                    // }
+
+
+                for (auto& chaves : novasRegras) {
+                    string categoria = chaves.first;
+
+                    // Iterar sobre o vetor de regras anteriores da mesma categoria
+                    for (auto& regraPrev : regras[categoria]) {
+                        // Verificar se regraPrev existe no mapa interno de novasRegras
+                        if (chaves.second.find(regraPrev) != chaves.second.end()) {
+                            // Substituir o valor da regra anterior pelo valor correspondente em novasRegras
+                            regraPrev = chaves.second.at(regraPrev);
+                        }
+                    }
+                }
+                    //cout << novaRegra << endl;
+                }
+            }
+        }
+        map<string, int> novoSimboloContador;
+        //Parte 2: Dividir todas as regras de tamanho maior que 2 de forma sequencial
+    for (auto& producoes : regras) {
+        vector<string> novasProducoes;
+        for (string regra : producoes.second) {
+            while (regra.size() > 2) {
+                string novoSimbolo = "T" + to_string(++novoSimboloContador[producoes.first]);
+                novasProducoes.push_back(regra.substr(0, 2) + novoSimbolo);
+                regra = novoSimbolo + regra.substr(2);
+            }
+            novasProducoes.push_back(regra);
+        }
+        producoes.second = novasProducoes;
+    }
+        
+
+        // Inserir as novas regras para os terminais substituídos
+        for (const auto& par : novosTerminais) {
+            regras[par.second].push_back(par.first);
         }
     }
 };
