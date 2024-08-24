@@ -15,23 +15,14 @@ public:
     map<string, vector<string>> regras;
     map<string, set<string>> closures;
 
-        void removerRecursividadeInicial() {
-        // Novo símbolo inicial S'
-        string novoSimboloInicial = "S'";
-
-        // Adiciona a nova produção S' -> S
-        regras[novoSimboloInicial].push_back("S");
-
-    }
-
     Gramatica(const string& nomeArquivo) {
         lerGramatica(nomeArquivo);
         removerRecursividadeInicial();
         eliminarRegrasLambda(); // Assumimos que a eliminação de regras lambda já foi realizada.
-        buildClosures();
-        removeChainRules();
-        removerSimbolosInuteis();
-        removerVariaveisInalcancaveis();
+        // buildClosures();
+        // removeChainRules();
+        // removerSimbolosInuteis();
+        // removerVariaveisInalcancaveis();
     }
 
     string trim(const string& str) {
@@ -45,6 +36,7 @@ public:
         for (auto& producao : regras["S"]) {
             for (char letra: producao){
                 if (letra == 'S'){
+                    cout << letra << endl;
                     recursao = true;
                 }
             }
@@ -130,15 +122,17 @@ public:
             } while (changed);
         }
 
-        void eliminarRegrasLambda() {
-            set<string> anulaveis;
-            acharAnulaveis(anulaveis);
+    void eliminarRegrasLambda() {
+        set<string> anulaveis;
+        acharAnulaveis(anulaveis);
 
-            if (anulaveis.find("S") != anulaveis.end()) {
-        regras["S'"].push_back(".");
-        auto& regrasS = regras["S"];
-        regrasS.erase(remove(regrasS.begin(), regrasS.end(), "."), regrasS.end());
-    }
+        if (anulaveis.find("S") != anulaveis.end()) {
+            if(regras.find("S'") != regras.end()){
+                regras["S'"].push_back(".");
+                auto& regrasS = regras["S"];
+                regrasS.erase(remove(regrasS.begin(), regrasS.end(), "."), regrasS.end());
+            }
+        }
 
             // Remover regras λ
             for (auto& producoes : regras) {
