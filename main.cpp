@@ -21,6 +21,7 @@ public:
 
         // Adiciona a nova produção S' -> S
         regras[novoSimboloInicial].push_back("S");
+
     }
 
     Gramatica(const string& nomeArquivo) {
@@ -119,10 +120,18 @@ public:
             set<string> anulaveis;
             acharAnulaveis(anulaveis);
 
+            if (anulaveis.find("S") != anulaveis.end()) {
+        regras["S'"].push_back(".");
+        auto& regrasS = regras["S"];
+        regrasS.erase(remove(regrasS.begin(), regrasS.end(), "."), regrasS.end());
+    }
+
             // Remover regras λ
             for (auto& producoes : regras) {
-                auto& regrasDireitas = producoes.second;
-                regrasDireitas.erase(remove(regrasDireitas.begin(), regrasDireitas.end(), "."), regrasDireitas.end());
+                if (producoes.first != "S'") {
+                    auto& regrasDireitas = producoes.second;
+                    regrasDireitas.erase(remove(regrasDireitas.begin(), regrasDireitas.end(), "."), regrasDireitas.end());
+                }
             }
 
             // Adicionar novas regras omitindo variáveis anuláveis
@@ -155,12 +164,7 @@ public:
                     }
                 }
             }
-            // Verifique se a variavel incial gera lambda, se for verdade, adiciona "." na regra
-            for (const auto& var : anulaveis) {
-            if (var == "S") {  
-                novasRegras[var].push_back(".");
-                }
-            }
+            
 
             // Atualizar a gramática com as novas regras
             for (auto& producoes : novasRegras) {
@@ -330,10 +334,4 @@ int main(int argc, const char** argv) {
     gramatica.mostrarRegras();
 
     return 0;
-}
-    
-
-
-    return 0;
-
 }
