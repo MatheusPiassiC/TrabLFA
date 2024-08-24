@@ -286,7 +286,7 @@ public:
     }
 
         void removerVariaveisInalcancaveis() {
-        set<string> reach = {"S"}; // Inicia com a variável inicial
+        set<string> reach = {"S'"}; // Inicia com a variável inicial
         set<string> prev;
         bool mudou;
 
