@@ -13,7 +13,7 @@ using namespace std;
 class Gramatica {
 public:
     map<string, vector<string>> regras;
-    map<string, set<string>> closures;
+    map<string, set<string>> fechos;
 
     //realiza a leitura de arquivo
     Gramatica(const string& nomeArquivo) {
@@ -21,13 +21,14 @@ public:
     }
 
 
-    //funcao que remove espaços em branco no inicio e ao final de uma string e vai ser chamada na feuncao de leitura da gramatica
+    // Funcao que remove espaços em branco no inicio e ao final de uma string e vai ser chamada na funcao de leitura da gramatica
     string trim(const string& str) {
         size_t first = str.find_first_not_of(' ');
         size_t last = str.find_last_not_of(' ');
         return str.substr(first, (last - first + 1));
     }
 
+    // Função para ler a gramática a partir de um arquivo
     void lerGramatica(const string& nomeArquivo) {
         ifstream arquivo(nomeArquivo);
         if (!arquivo.is_open()) {
@@ -66,20 +67,28 @@ public:
     }
 
     //Funcao que cria um novo S' que aponta pra S 
-    void removerRecursividadeInicial() {
-
-        string novoSimboloInicial = "S'";
-
-        regras[novoSimboloInicial].push_back("S");
-
+    void removerRecursividadeInicial(){
+        bool recursao = false;
+        for (auto& producao : regras["S"]) {
+            for (char letra: producao){
+                if (letra == 'S'){
+                    recursao = true;
+                }
+            }
+        }
+        if(recursao == true){
+            regras["S'"].push_back("S");
+        }
     }
 
-    //MEtodo que vai ser chamado na funcao acharAulaveis para verificar se um produção inteira é composta apenas por simbolos anulaveis 
-    //Os simbolos anulaveis sao registrado em prev
-    bool isInPrev(const string &w, const set<string> &prev) {
-        for (char c : w) {
-            string s(1, c);
-            if (prev.find(s) == prev.end()) {
+    /*
+    Metodo que vai ser chamado na funcao acharAnulaveis para verificar se um produção inteira é composta apenas por simbolos anulaveis 
+    Os simbolos anulaveis sao registrado em anterior
+    */
+    bool todosSimbolosAnulaveis(const string &producao, const set<string> &simbolosAnulaveis) {
+        for (char simbolo : producao) {
+            string simboloStr(1, simbolo);
+            if (simbolosAnulaveis.find(simboloStr) == simbolosAnulaveis.end()) {
                 return false;
             }
         }
@@ -88,31 +97,31 @@ public:
 
     void acharAnulaveis(set<string>& anulaveis) {
         for (const auto &producoes : regras) {
-            for (const string &rule : producoes.second) {
-                if (rule == ".") {
+            for (const string &regra : producoes.second) {
+                if (regra == ".") {
                     anulaveis.insert(producoes.first);
                 }
             }
         }
 
-        bool changed;
+        bool mudou;
         do {
             set<string> prev = anulaveis;
-            changed = false;
+            mudou = false;
 
             for (const auto &producoes : regras) {
                 string A = producoes.first;
-                for (const string &rule : producoes.second) {
-                    if (isInPrev(rule, prev)) {
+                for (const string &regra : producoes.second) {
+                    if (todosSimbolosAnulaveis(regra, prev)) {
                         if (anulaveis.find(A) == anulaveis.end()) {
                             anulaveis.insert(A);
-                            changed = true;
+                            mudou = true;
                         }
                     }
                 }
             }
 
-        } while (changed);
+        } while (mudou);
     }
 
     void eliminarRegrasLambda() {
@@ -177,51 +186,51 @@ public:
     }
 
 
-    //Metodo feito para criar o fecho transitvo das regras de cadeia que vao ser utilizados na funcao removeChainRules()
-    void buildClosures() {
+    //Metodo feito para criar o fecho transitvo das regras de cadeia que vao ser utilizados na funcao removerRegrasCadeia()
+    void criarFechos() {
         for (const auto& rule : regras) {
             string A = rule.first;
-            closures[A].insert(A);
+            fechos[A].insert(A);
             for (const string& B : rule.second) {
                 if (regras.find(B) != regras.end()) {
-                    closures[A].insert(B);
+                    fechos[A].insert(B);
                 }
             }
         }
 
-        bool changed;
+        bool mudou;
         do {
-            changed = false;
-            for (auto& closure : closures) {
-                string A = closure.first;
-                set<string> newSet = closure.second;
-                for (const string& B : closure.second) {
-                    newSet.insert(closures[B].begin(), closures[B].end());
+            mudou = false;
+            for (auto& fecho : fechos) {
+                string A = fecho.first;
+                set<string> novoSet = fecho.second;
+                for (const string& B : fecho.second) {
+                    novoSet.insert(fechos[B].begin(), fechos[B].end());
                 }
-                if (newSet.size() > closures[A].size()) {
-                    closures[A] = newSet;
-                    changed = true;
+                if (novoSet.size() > fechos[A].size()) {
+                    fechos[A] = novoSet;
+                    mudou = true;
                 }
             }
-        } while (changed);
+        } while (mudou);
     }
 
-    void removeChainRules() {
-        for (const auto& closure : closures) {
-            string A = closure.first;
-            set<string> newRules;
-            for (const string& B : closure.second) {
+    void removerRegrasCadeia() {
+        for (const auto& fecho : fechos) {
+            string A = fecho.first;
+            set<string> novasRegras;
+            for (const string& B : fecho.second) {
                 if (A != B) {
                     for (const string& rule : regras[B]) {
                         if (regras.find(rule) == regras.end()) {
-                            newRules.insert(rule);
+                            novasRegras.insert(rule);
                         }
                     }
                 }
             }
-            for (const string& newRule : newRules) {
-                if (find(regras[A].begin(), regras[A].end(), newRule) == regras[A].end()) {
-                    regras[A].push_back(newRule);
+            for (const string& novaRegra : novasRegras) {
+                if (find(regras[A].begin(), regras[A].end(), novaRegra) == regras[A].end()) {
+                    regras[A].push_back(novaRegra);
                 }
             }
         }
@@ -241,7 +250,7 @@ public:
     }
     
     void removerSimbolosInuteis() {
-    set<string> terminais;
+        set<string> terminais;
 
         // PRimeira etapa: Identificar variáveis que geram terminais diretamente
         for (const auto& producoes : regras) {
@@ -292,7 +301,13 @@ public:
     }
 
     void removerVariaveisInalcancaveis() {
-        set<string> reach = {"S'"}; // Inicia com a variável inicial
+        set<string> reach;
+            if(regras.find("S'") != regras.end()){
+                reach = {"S'"}; // Inicia com a variável inicial
+            }
+            else{
+                reach = {"S"};
+            }
         set<string> prev;
         bool mudou;
 
@@ -330,7 +345,7 @@ public:
 
     //Primeira parte do processo de converssao a FNC
     void substituirTerminais() {
-    map<string, string> terminaisParaNaoTerminais; 
+        map<string, string> terminaisParaNaoTerminais; 
 
         // Primeira etapa: Substituir terminais em produções com tamanho maior que 1
         for (auto& producao : regras) {
@@ -423,7 +438,7 @@ public:
         }
     }
 
-    //PAra fins de organização, chamamos as duas partes do processo de FNC dentro deste metodo
+    //Para fins de organização, chamamos as duas partes do processo de FNC dentro deste metodo
     void converterFNC(){
         substituirTerminais();
         dividirRegrasLongas();
@@ -433,13 +448,16 @@ public:
 };
 
     
-int main(int argc, const char** argv) {
-    Gramatica gramatica("gramatica.txt");
+int main(int argc, char* argv[]) {
+
+    const char* nomeArquivo = argv[1];
+
+    Gramatica gramatica(nomeArquivo);
 
         gramatica.removerRecursividadeInicial();
         gramatica.eliminarRegrasLambda();
-        gramatica.buildClosures();
-        gramatica.removeChainRules();
+        gramatica.criarFechos();
+        gramatica.removerRegrasCadeia();
         gramatica.removerSimbolosInuteis();
         gramatica.removerVariaveisInalcancaveis();
 
