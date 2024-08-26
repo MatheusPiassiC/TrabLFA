@@ -17,8 +17,8 @@ O programa converte uma GLC em FNC seguindo os passos aprendidos no curso. Ele e
 
 Clone o repositório:
 ```bash
-git clone https://github.com/seu_usuario/conversor-glc-fnc.git
-cd conversor-glc-fnc
+git clone https://github.com/MatheusPiassiC/TrabLFA
+cd TrabLFA
 ```
 
 ## Como Compilar e Executar
